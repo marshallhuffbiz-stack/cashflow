@@ -1,44 +1,27 @@
 /**
- * Cash Flow Tracker — backend (Google Apps Script web app, backed by a Google Sheet).
- * The whole app state is stored as JSON in cell A1 of a "state" sheet. Simple + robust for one user.
+ * Cash Flow Tracker — backend (Google Apps Script web app).
+ * Stores the whole app state as JSON in a SCRIPT PROPERTY. No Sheet, and no sensitive OAuth
+ * scopes, so it deploys WITHOUT an authorization prompt.
  *
- * Setup (one time, ~3 min):
- *   1. Create a new Google Sheet (sheets.new).
- *   2. Extensions -> Apps Script. Delete the sample, paste THIS file, save.
- *   3. Deploy -> New deployment -> type "Web app".
- *        Execute as: Me.  Who has access: Anyone.   -> Deploy. Authorize when asked.
- *   4. Copy the Web app URL (ends in /exec).
- *   5. In the Cash Flow app: Settings -> "Cloud sync URL" -> paste -> Save.
+ * DEPLOYED 2026-06-20 as a standalone web app (Execute as: Me, Who has access: Anyone).
+ * The /exec URL is effectively the secret token — it lives in the app's Settings and in the
+ * private import link, NOT in this public repo.
+ *
+ * Note: a script property holds up to ~9KB; the personal state is ~2KB, with slow growth from
+ * monthly archives. If it ever approaches the limit, switch storage to a bound Google Sheet cell.
  */
-
-const SHEET_NAME = 'state';
-
-function getSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) { sh = ss.insertSheet(SHEET_NAME); }
-  return sh;
-}
-
 function doGet() {
-  const raw = getSheet_().getRange('A1').getValue();
-  let state = null;
-  try { state = raw ? JSON.parse(raw) : null; } catch (e) { state = null; }
-  return json_({ ok: true, state: state });
+  var v = PropertiesService.getScriptProperties().getProperty('cft_state');
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, state: v ? JSON.parse(v) : null }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
   try {
-    const body = JSON.parse(e.postData.contents);
-    if (body && body.state) {
-      getSheet_().getRange('A1').setValue(JSON.stringify(body.state));
-    }
-    return json_({ ok: true });
+    var b = JSON.parse(e.postData.contents);
+    if (b && b.state) PropertiesService.getScriptProperties().setProperty('cft_state', JSON.stringify(b.state));
+    return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return json_({ ok: false, error: String(err) });
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) })).setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
