@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>Cash Flow</title>
+  <meta name="description" content="Personal cash-flow tracker" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Cash Flow" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Cash Flow</h1>
+    <button id="sync-status" class="sync-status" type="button" title="Sync status" aria-label="Sync status">
+      <span class="dot" id="sync-dot"></span><span id="sync-label">on device</span>
+    </button>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" data-tab="home" aria-label="Home">⌂<span>Home</span></button>
+    <button class="tab" data-tab="ledger" aria-label="Ledger">≣<span>Ledger</span></button>
+    <button class="tab fab" id="add-btn" aria-label="Add item">+</button>
+    <button class="tab" data-tab="whatif" aria-label="Ad what-if">◐<span>Ads</span></button>
+    <button class="tab" data-tab="settings" aria-label="Settings">⚙<span>Settings</span></button>
+  </nav>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
