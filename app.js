@@ -342,7 +342,20 @@ async function onAction(action, ds, target) {
     state.settings.horizonDays = Math.max(7, Math.round(+$('#set-horizon').value || 60));
     commit(); toast('Settings saved'); return;
   }
-  if (action === 'save-sync') { state.settings.syncUrl = $('#set-sync').value.trim(); commit(); toast(state.settings.syncUrl ? 'Sync on' : 'Sync off'); return; }
+  if (action === 'save-sync') {
+    const url = $('#set-sync').value.trim();
+    state.settings.syncUrl = url; saveState(state);
+    if (!url) { render(); toast('Sync off'); return; }
+    setSync('syncing');
+    try {
+      const remote = await pullRemote(url);
+      if (remote && Array.isArray(remote.items) && remote.items.length) {
+        remote.settings.syncUrl = url; state = saveState(remote); toast('Synced — loaded your cloud data');
+      } else { await pushRemote(url, state); toast('Sync on'); }
+      setSync('synced');
+    } catch { setSync('error'); toast('Could not reach that sync URL'); }
+    render(); return;
+  }
   if (action === 'export') { exportState(state); toast('Backup downloaded'); return; }
   if (action === 'import') { $('#import-file').click(); return; }
   if (action === 'rollover') {
@@ -394,7 +407,11 @@ $('#add-btn').addEventListener('click', () => openItemModal(null));
   if (location.hash.startsWith('#import=')) {
     try {
       const json = decodeURIComponent(escape(atob(location.hash.slice(8))));
-      state = saveState(importStateFromJSON(JSON.parse(json)));
+      const incoming = importStateFromJSON(JSON.parse(json));
+      const keepSync = state.settings.syncUrl;            // preserve this device's sync URL
+      if (keepSync) incoming.settings.syncUrl = keepSync;
+      state = saveState(incoming);
+      if (keepSync) { try { await pushRemote(keepSync, state); } catch {} }  // push imported data to cloud
       history.replaceState(null, '', location.pathname + location.search);
       setTimeout(() => toast('Your data loaded'), 300);
     } catch { /* bad link — ignore, keep existing data */ }

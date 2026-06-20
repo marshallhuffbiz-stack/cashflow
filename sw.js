@@ -1,5 +1,5 @@
 // Offline shell. Bump CACHE when shipping breaking changes to force a full refresh.
-const CACHE = 'cft-v1';
+const CACHE = 'cft-v2';
 const ASSETS = [
   './', './index.html', './styles.css', './app.js', './logic.js', './storage.js',
   './manifest.webmanifest', './icons/icon-192.png',
