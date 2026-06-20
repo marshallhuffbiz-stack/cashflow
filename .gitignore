@@ -1,0 +1,6 @@
+# private — never commit personal financial data
+seed/
+.auto/
+.DS_Store
+node_modules/
+*.log
