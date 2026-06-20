@@ -77,6 +77,16 @@ test('buildLedger running balance + order', () => {
   const led = L.buildLedger(baseState(), '2026-06-20', '2026-07-31');
   assert.deepEqual(led.map(r => [r.date, r.balanceAfter]), [['2026-06-25', 1450], ['2026-06-28', 600]]);
 });
+test('same-day income is ordered before expenses', () => {
+  const s = baseState();
+  s.items = [
+    { id: 'bill', name: 'Bill', amount: 300, direction: 'out', tag: 'personal', date: '2026-06-22', recurrence: 'none' },
+    { id: 'inv', name: 'Invoice', amount: 2000, direction: 'in', tag: 'personal', date: '2026-06-22', recurrence: 'none' },
+  ];
+  const led = L.buildLedger(s, '2026-06-20', '2026-07-31');
+  // income first: 1000 + 2000 = 3000, then -300 = 2700 (never dips to 700)
+  assert.deepEqual(led.map(r => [r.name, r.balanceAfter]), [['Invoice', 3000], ['Bill', 2700]]);
+});
 test('onHandNow only counts settled', () => {
   const s = baseState();
   assert.equal(L.onHandNow(s), 1000);

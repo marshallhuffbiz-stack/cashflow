@@ -95,7 +95,11 @@ export function buildOccurrences(state, rangeStart, rangeEnd) {
       out.push(o);
     }
   }
-  out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)));
+  out.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    if (a.direction !== b.direction) return a.direction === 'in' ? -1 : 1; // same day: income credited before bills
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+  });
   return out;
 }
 
