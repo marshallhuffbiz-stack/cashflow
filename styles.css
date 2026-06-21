@@ -114,3 +114,22 @@ input[type=range] { padding: 0; accent-color: var(--accent); }
 .whatif-readout .big { font-size: 22px; font-weight: 650; }
 .status-pill { font-size: 14px; font-weight: 500; border-radius: 10px; padding: 9px 12px; background: var(--ok-bg); color: var(--ok-text); }
 .status-pill.tight { background: var(--bad-bg); color: var(--bad-text); }
+
+.monthbar { display:flex; align-items:center; justify-content:space-between; margin: 2px 0 14px; }
+.monthbar button { width:40px; height:40px; border-radius:50%; border:0.5px solid var(--line); background:var(--surface); color:var(--text); font-size:20px; cursor:pointer; box-shadow:var(--shadow); }
+.monthbar .mlabel { font-size:18px; font-weight:600; letter-spacing:-.01em; }
+.msum { padding: 8px 18px; }
+.msum-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:14px; border-bottom:0.5px solid var(--line); }
+.msum-row:last-child { border-bottom:none; }
+.msum-row span { color: var(--muted); }
+.msum-row.in b { color: var(--in); }
+.msum-row.out b { color: var(--out); }
+.msum-row.net b, .msum-row.end b { font-size:16px; }
+.msum-row.end { border-top:0.5px solid var(--line); padding-top:11px; }
+.insight { padding: 14px 16px; }
+.insight .ititle { font-size:14px; font-weight:600; margin-bottom:5px; }
+.insight.good .ititle { color: var(--in); }
+.insight.warn .ititle { color: var(--warn); }
+.insight.info .ititle { color: var(--accent); }
+.insight .ibody { font-size:13px; color: var(--muted); line-height:1.55; }
+.insight .ibody b { color: var(--text); font-weight:600; }

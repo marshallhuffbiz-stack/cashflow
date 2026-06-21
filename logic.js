@@ -170,3 +170,56 @@ export function rolloverMonth(state, asOfISO) {
   const items = state.items.filter((i) => !((i.recurrence === 'none' || !i.recurrence) && i.date <= asOfISO));
   return { ...state, settings: { ...state.settings, startingBalance: ending, anchorDate: asOfISO }, occurrences, archives, items };
 }
+
+/* ---------- month views ---------- */
+export function monthKeyOf(iso) { return iso.slice(0, 7); }
+export function monthStart(mk) { return mk + '-01'; }
+export function monthEnd(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  return fmtDate(new Date(Date.UTC(y, m, 0))); // day 0 of next month = last day of this month
+}
+export function addMonthKey(mk, n) {
+  const [y, m] = mk.split('-').map(Number);
+  const d = new Date(Date.UTC(y, (m - 1) + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export function monthLabel(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+
+// Summary for one calendar month: opening (entering) balance, income/expense/net, closing, month rows.
+export function monthSummary(state, mk) {
+  const ms = monthStart(mk), me = monthEnd(mk);
+  const led = buildLedger(state, state.settings.anchorDate, me);
+  const rows = led.filter((r) => r.date >= ms && r.date <= me);
+  let opening = state.settings.startingBalance;
+  for (const r of led) { if (r.date < ms) opening = r.balanceAfter; else break; }
+  let income = 0, expense = 0;
+  for (const r of rows) { if (r.direction === 'in') income += r.amount; else expense += r.amount; }
+  const closing = rows.length ? rows[rows.length - 1].balanceAfter : opening;
+  return { monthKey: mk, opening, income, expense, net: income - expense, closing, rows };
+}
+
+// Actionable budget / spending insights (structured; the UI turns these into advice text).
+export function buildInsights(state, today) {
+  const cushion = state.settings.cushion;
+  const end = addDays(today, state.settings.horizonDays);
+  const led = buildLedger(state, state.settings.anchorDate, end);
+  const lp = lowestPoint(led, state.settings.startingBalance, today, end);
+  const mk = monthKeyOf(today);
+  const ms = monthSummary(state, mk);
+  const outRows = ms.rows.filter((r) => r.direction === 'out');
+  let biggest = null;
+  for (const r of outRows) if (!biggest || r.amount > biggest.amount) biggest = r;
+  const bizSpend = outRows.filter((r) => r.tag === 'business').reduce((s, r) => s + r.amount, 0);
+  return {
+    floor: { belowFloor: lp.balance < cushion, lowBalance: lp.balance, lowDate: lp.date, cushion, gap: Math.round(lp.balance - cushion) },
+    ads: { amount: maxSafeAdSpend(state, today) },
+    month: { monthKey: mk, opening: ms.opening, income: ms.income, expense: ms.expense, net: ms.net, closing: ms.closing },
+    biggest: biggest ? { name: biggest.name, amount: biggest.amount } : null,
+    business: { spend: bizSpend },
+    discretionary: Math.max(0, Math.round(ms.closing - cushion)),
+  };
+}

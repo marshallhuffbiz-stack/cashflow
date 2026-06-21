@@ -128,5 +128,46 @@ test('rolloverMonth carries settled balance + archives + keeps future', () => {
   assert.equal(s2.occurrences['pay#2026-06-25'], undefined); // past override cleared
 });
 
+/* ---------- month logic ---------- */
+test('monthKeyOf', () => assert.equal(L.monthKeyOf('2026-06-22'), '2026-06'));
+test('monthStart', () => assert.equal(L.monthStart('2026-06'), '2026-06-01'));
+test('monthEnd 30-day', () => assert.equal(L.monthEnd('2026-06'), '2026-06-30'));
+test('monthEnd Feb non-leap', () => assert.equal(L.monthEnd('2026-02'), '2026-02-28'));
+test('addMonthKey', () => assert.equal(L.addMonthKey('2026-06', 2), '2026-08'));
+test('addMonthKey cross-year', () => assert.equal(L.addMonthKey('2026-11', 3), '2027-02'));
+test('monthLabel', () => assert.equal(L.monthLabel('2026-06'), 'June 2026'));
+
+const monthState = () => ({
+  version: 1,
+  settings: { startingBalance: 1000, anchorDate: '2026-06-01', cushion: 300, horizonDays: 120, syncUrl: '' },
+  items: [
+    { id: 'pay', name: 'Pay', amount: 2000, direction: 'in', tag: 'personal', date: '2026-06-15', recurrence: 'monthly' },
+    { id: 'rent', name: 'Rent', amount: 1200, direction: 'out', tag: 'personal', date: '2026-06-05', recurrence: 'monthly' },
+  ],
+  occurrences: {}, archives: [],
+});
+test('monthSummary June', () => {
+  const m = L.monthSummary(monthState(), '2026-06');
+  assert.deepEqual([m.opening, m.income, m.expense, m.net, m.closing, m.rows.length], [1000, 2000, 1200, 800, 1800, 2]);
+});
+test('monthSummary July carries opening from June close', () => {
+  const m = L.monthSummary(monthState(), '2026-07');
+  assert.deepEqual([m.opening, m.income, m.expense, m.net, m.closing], [1800, 2000, 1200, 800, 2600]);
+});
+
+/* ---------- insights ---------- */
+test('buildInsights numbers', () => {
+  const i = L.buildInsights(monthState(), '2026-06-10');
+  assert.equal(i.floor.belowFloor, true);
+  assert.equal(i.floor.lowBalance, -200);
+  assert.equal(i.floor.gap, -500);
+  assert.equal(i.ads.amount, 0);
+  assert.deepEqual([i.month.income, i.month.expense, i.month.net, i.month.closing], [2000, 1200, 800, 1800]);
+  assert.equal(i.biggest.name, 'Rent');
+  assert.equal(i.biggest.amount, 1200);
+  assert.equal(i.business.spend, 0);
+  assert.equal(i.discretionary, 1500);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (failures.length) { console.log('\nFAILURES:\n - ' + failures.join('\n - ')); process.exit(1); }
