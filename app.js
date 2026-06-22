@@ -53,13 +53,21 @@ function adBaseline() {
 
 function spark(values, lowIdx) {
   if (values.length < 2) return '';
-  const W = 300, H = 60, P = 5;
+  const W = 300, H = 64, P = 7;
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
-  const pts = values.map((v, i) => `${((i / (values.length - 1)) * W).toFixed(1)},${((H - P) - ((v - min) / span) * (H - 2 * P)).toFixed(1)}`);
-  let dot = '';
-  if (lowIdx != null) { const [lx, ly] = pts[lowIdx].split(','); dot = `<circle cx="${lx}" cy="${ly}" r="3.5" fill="var(--warn)"></circle>`; }
+  const x = (i) => ((i / (values.length - 1)) * W);
+  const y = (v) => (H - P) - ((v - min) / span) * (H - 2 * P);
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const area = `M 0,${H} ` + values.map((v, i) => `L ${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') + ` L ${W},${H} Z`;
+  let dots = `<circle cx="${x(0).toFixed(1)}" cy="${y(values[0]).toFixed(1)}" r="3" fill="var(--accent)"></circle>`;
+  if (lowIdx != null) dots += `<circle cx="${x(lowIdx).toFixed(1)}" cy="${y(values[lowIdx]).toFixed(1)}" r="3.5" fill="var(--warn)"></circle>`;
   return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Projected balance">
-    <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>${dot}</svg>`;
+    <defs><linearGradient id="cf-sg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="var(--accent)" stop-opacity="0.20"></stop>
+      <stop offset="1" stop-color="var(--accent)" stop-opacity="0"></stop>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#cf-sg)" stroke="none"></path>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>${dots}</svg>`;
 }
 
 function rowHTML(o, showBal) {
