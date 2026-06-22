@@ -133,3 +133,31 @@ input[type=range] { padding: 0; accent-color: var(--accent); }
 .insight.info .ititle { color: var(--accent); }
 .insight .ibody { font-size:13px; color: var(--muted); line-height:1.55; }
 .insight .ibody b { color: var(--text); font-weight:600; }
+
+/* ===== v3 polish — premium finance look (override layer, visual-only) ===== */
+:root {
+  --accent: #3b5bdb; --accent-soft: #e9ecfb;
+  --bg: #f3f4f6; --line: rgba(17,20,24,.08); --radius: 16px;
+  --shadow: 0 1px 2px rgba(17,20,24,.05), 0 6px 18px rgba(17,20,24,.045);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0b0d11; --surface:#15181d; --surface-2:#1e222a; --accent:#7088ff;
+    --accent-soft:#1a2236; --line:rgba(255,255,255,.085); --shadow:0 1px 2px rgba(0,0,0,.5); }
+}
+/* aligned, tabular money everywhere */
+.hero-value, .stat .v, .amt, .bal, .msum-row b, .whatif-readout .big, .chip-safe .a, #wf-spend, #wf-low { font-variant-numeric: tabular-nums; }
+/* type refinement */
+.hero-value { letter-spacing:-.035em; font-weight:680; }
+.hero-label { text-transform:uppercase; letter-spacing:.07em; font-size:11px; font-weight:600; color:var(--faint); }
+.hero-sub { font-size:12.5px; }
+.stat .l { text-transform:uppercase; letter-spacing:.05em; font-size:11px; font-weight:600; }
+.stat .v { letter-spacing:-.02em; }
+.section-label { letter-spacing:.07em; font-weight:600; }
+.bal { font-size:12px; opacity:.9; }
+.msum-row b, .monthbar .mlabel, .insight .ititle { letter-spacing:-.01em; }
+/* chart breathing room + depth */
+.spark { height:68px; margin-top:14px; }
+/* tab bar + FAB refinement */
+.tab.fab { width:46px; height:46px; font-size:24px; box-shadow:0 6px 16px rgba(59,91,219,.4); margin-top:-14px; }
+.tab.on { font-weight:500; }
+.chip-safe { border-radius:14px; }
