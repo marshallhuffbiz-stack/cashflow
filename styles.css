@@ -161,3 +161,19 @@ input[type=range] { padding: 0; accent-color: var(--accent); }
 .tab.fab { width:46px; height:46px; font-size:24px; box-shadow:0 6px 16px rgba(59,91,219,.4); margin-top:-14px; }
 .tab.on { font-weight:500; }
 .chip-safe { border-radius:14px; }
+
+/* ===== v4 — plain-language status + clarity polish ===== */
+:root { --warn-bg:#fbf0d9; }
+@media (prefers-color-scheme: dark){ :root{ --warn-bg:#2a2410; } }
+.status { display:flex; align-items:center; gap:12px; padding:15px 16px; border-radius:16px; margin-bottom:14px; cursor:pointer; box-shadow:var(--shadow); }
+.status-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+.status-txt { flex:1; min-width:0; }
+.status-head { font-size:16px; font-weight:600; letter-spacing:-.01em; }
+.status-sub { font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.45; }
+.status-chev { color:var(--faint); font-size:24px; line-height:1; flex:0 0 auto; }
+.status-good { background:var(--ok-bg); } .status-good .status-dot{ background:var(--in); } .status-good .status-head{ color:var(--ok-text); }
+.status-tight { background:var(--warn-bg); } .status-tight .status-dot{ background:var(--warn); } .status-tight .status-head{ color:var(--warn); }
+.status-critical { background:var(--bad-bg); } .status-critical .status-dot{ background:var(--out); } .status-critical .status-head{ color:var(--bad-text); }
+.hero-value[role=button] { cursor:pointer; }
+.reconcile-hint { font-size:10px; font-weight:500; color:var(--faint); text-transform:none; letter-spacing:0; background:var(--surface-2); padding:2px 7px; border-radius:8px; margin-left:7px; vertical-align:middle; }
+.empty { font-size:14.5px; line-height:1.6; padding:46px 26px; }
