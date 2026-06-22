@@ -223,3 +223,23 @@ export function buildInsights(state, today) {
     discretionary: Math.max(0, Math.round(ms.closing - cushion)),
   };
 }
+
+// Plain-language "am I OK?" status. UI turns this into one clear sentence.
+export function statusSummary(state, today) {
+  const cushion = state.settings.cushion;
+  const end = addDays(today, state.settings.horizonDays);
+  const led = buildLedger(state, state.settings.anchorDate, end);
+  const lp = lowestPoint(led, state.settings.startingBalance, today, end);
+  const onHand = onHandNow(state);
+  let recoversOn = null;
+  if (lp.balance < cushion) {
+    for (const r of led) {
+      if (r.date >= lp.date && r.balanceAfter >= cushion) { recoversOn = r.date; break; }
+    }
+  }
+  const endBalance = led.length ? led[led.length - 1].balanceAfter : state.settings.startingBalance;
+  let tone = 'good';
+  if (onHand < 0 || lp.balance < 0) tone = 'critical';
+  else if (lp.balance < cushion) tone = 'tight';
+  return { tone, lowBalance: lp.balance, lowDate: lp.date, cushion, recoversOn, endBalance };
+}

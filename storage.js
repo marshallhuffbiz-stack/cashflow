@@ -1,5 +1,5 @@
 // Storage layer: localStorage source-of-truth + JSON export/import + optional Apps Script cloud sync.
-import { todayISO } from './logic.js';
+import { todayISO } from './logic.js?v=4';
 
 const KEY = 'cft.state.v1';
 

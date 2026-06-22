@@ -169,5 +169,30 @@ test('buildInsights numbers', () => {
   assert.equal(i.discretionary, 1500);
 });
 
+/* ---------- plain-language status ---------- */
+test('statusSummary tight then recovers', () => {
+  const s = { version: 1, settings: { startingBalance: 60, anchorDate: '2026-06-21', cushion: 300, horizonDays: 90, syncUrl: '' },
+    items: [
+      { id: 'inc', name: 'Income', amount: 2250, direction: 'in', tag: 'personal', date: '2026-06-22', recurrence: 'monthly' },
+      { id: 'bill', name: 'Bill', amount: 50, direction: 'out', tag: 'personal', date: '2026-06-21', recurrence: 'none' },
+    ], occurrences: {}, archives: [] };
+  const r = L.statusSummary(s, '2026-06-21');
+  assert.equal(r.tone, 'tight');
+  assert.equal(r.lowBalance, 10);
+  assert.equal(r.recoversOn, '2026-06-22');
+});
+test('statusSummary good when always above floor', () => {
+  const s = { version: 1, settings: { startingBalance: 5000, anchorDate: '2026-06-21', cushion: 300, horizonDays: 90, syncUrl: '' },
+    items: [{ id: 'bill', name: 'Bill', amount: 50, direction: 'out', tag: 'personal', date: '2026-06-21', recurrence: 'none' }], occurrences: {}, archives: [] };
+  const r = L.statusSummary(s, '2026-06-21');
+  assert.equal(r.tone, 'good');
+  assert.equal(r.recoversOn, null);
+});
+test('statusSummary critical when below zero', () => {
+  const s = { version: 1, settings: { startingBalance: 60, anchorDate: '2026-06-21', cushion: 300, horizonDays: 90, syncUrl: '' },
+    items: [{ id: 'big', name: 'Big bill', amount: 400, direction: 'out', tag: 'personal', date: '2026-06-21', recurrence: 'none' }], occurrences: {}, archives: [] };
+  assert.equal(L.statusSummary(s, '2026-06-21').tone, 'critical');
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (failures.length) { console.log('\nFAILURES:\n - ' + failures.join('\n - ')); process.exit(1); }

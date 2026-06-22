@@ -1,5 +1,5 @@
-import * as L from './logic.js';
-import { loadState, saveState, defaultState, exportState, importStateFromFile, importStateFromJSON, pullRemote, pushRemote, syncOnLoad } from './storage.js';
+import * as L from './logic.js?v=4';
+import { loadState, saveState, defaultState, exportState, importStateFromFile, importStateFromJSON, pullRemote, pushRemote, syncOnLoad } from './storage.js?v=4';
 
 let state = loadState();
 let filter = 'all';
@@ -85,6 +85,28 @@ function rowHTML(o, showBal) {
 const filterBar = () => `<div class="filter">${['all', 'business', 'personal'].map((f) => `<button data-action="filter" data-filter="${f}" class="${filter === f ? 'on' : ''}">${f[0].toUpperCase() + f.slice(1)}</button>`).join('')}</div>`;
 
 /* ---------- Home ---------- */
+function statusBanner() {
+  if (!state.items.length) return '';
+  const today = L.todayISO();
+  const s = L.statusSummary(state, today);
+  const end = L.addDays(today, state.settings.horizonDays);
+  let head, sub;
+  if (s.tone === 'good') { head = "You're in good shape"; sub = `Lowest you dip is ${money(s.lowBalance)} on ${fmtDay(s.lowDate)} — comfortably above your floor.`; }
+  else if (s.tone === 'tight') {
+    const recToday = s.recoversOn === today, lowToday = s.lowDate === today;
+    if (!s.recoversOn) {
+      head = 'Money stays tight';
+      sub = `Stays under your ${money(s.cushion)} floor through ${fmtDay(end)} — go easy on spending.`;
+    } else if (s.lowDate === s.recoversOn) {
+      head = recToday ? 'Tight today, then clear' : `Tight on ${fmtDay(s.lowDate)}, then clear`;
+      sub = `You're at your low of ${money(s.lowBalance)}${lowToday ? ' right now' : ''} — money landing ${recToday ? 'today' : `on ${fmtDay(s.recoversOn)}`} puts you back above your ${money(s.cushion)} floor.`;
+    } else {
+      head = `Tight until ${fmtDay(s.recoversOn)}`;
+      sub = `Dips to ${money(s.lowBalance)} on ${fmtDay(s.lowDate)}, then back above your ${money(s.cushion)} floor by ${fmtDay(s.recoversOn)}.`;
+    }
+  } else { head = "Money's short right now"; sub = `You dip to ${money(s.lowBalance)} on ${fmtDay(s.lowDate)} — something needs to move soon.`; }
+  return `<div class="status status-${s.tone}" data-action="goto-insights"><span class="status-dot"></span><div class="status-txt"><div class="status-head">${head}</div><div class="status-sub">${sub}</div></div><span class="status-chev">›</span></div>`;
+}
 function renderHome() {
   const { today, start, end } = window_();
   const ledger = L.buildLedger(state, start, end);
@@ -109,9 +131,10 @@ function renderHome() {
   else listHTML = `<div class="rows">${list.slice(0, 40).map((o) => rowHTML(o, filter === 'all')).join('')}</div>`;
 
   view.innerHTML = `
-    <div class="card">
-      <p class="hero-label">On hand now</p>
-      <p class="hero-value ${onHand < 0 ? 'neg' : ''}">${money(onHand)}</p>
+    ${statusBanner()}
+    <div class="card hero-card">
+      <p class="hero-label">On hand now${state.items.length ? ' <span class="reconcile-hint">tap to update</span>' : ''}</p>
+      <p class="hero-value ${onHand < 0 ? 'neg' : ''}" data-action="reconcile" role="button" tabindex="0">${money(onHand)}</p>
       <p class="hero-sub">settled · ${state.items.length ? L.monthLabel(thisMk) : 'set your starting balance in Settings'}</p>
       ${state.items.length ? spark(sparkVals, lowIdx) : ''}
     </div>
@@ -293,6 +316,18 @@ function openOccModal(occId) {
     </div></div>`;
 }
 
+function openReconcile() {
+  $('#modal-root').innerHTML = `
+    <div class="modal-bg" data-action="close-bg"><div class="modal">
+      <button class="x" data-action="close">×</button>
+      <h2>Update your balance</h2>
+      <p class="meta" style="margin:-8px 0 16px">What's actually in your account right now? Everything projects forward from this number.</p>
+      <label class="fld"><span class="lab">Cash on hand</span><input type="number" id="rc-bal" inputmode="decimal" value="${state.settings.startingBalance}" /></label>
+      <button class="btn primary" data-action="rc-save">Save</button>
+    </div></div>`;
+  setTimeout(() => { const e = $('#rc-bal'); if (e) { e.focus(); e.select(); } }, 60);
+}
+
 function openItemModal(id) {
   const it = id ? findItem(id) : { id: '', name: '', amount: '', direction: 'out', tag: 'personal', date: L.todayISO(), recurrence: 'none', approx: false, note: '' };
   $('#modal-root').innerHTML = `
@@ -321,12 +356,15 @@ function openItemModal(id) {
   $('#it-dir').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; dir = b.dataset.v; $$('#it-dir button').forEach((x) => x.classList.toggle('on', x === b)); });
   $('#it-tag').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; tagv = b.dataset.v; $$('#it-tag button').forEach((x) => x.classList.toggle('on', x === b)); });
   $('#modal-root')._getDir = () => dir; $('#modal-root')._getTag = () => tagv;
+  if (!id) setTimeout(() => { const e = $('#it-name'); if (e) e.focus(); }, 60);
 }
 
 /* ---------- actions ---------- */
 async function onAction(action, ds, target) {
   if (action === 'filter') { filter = ds.filter; render(); return; }
   if (action === 'goto-insights') { tab = 'insights'; render(); return; }
+  if (action === 'reconcile') { openReconcile(); return; }
+  if (action === 'rc-save') { state.settings.startingBalance = Math.round(+$('#rc-bal').value || 0); state.settings.anchorDate = L.todayISO(); closeModal(); commit(); toast('Balance updated'); return; }
   if (action === 'month-prev') { month = L.addMonthKey(month, -1); render(); return; }
   if (action === 'month-next') { month = L.addMonthKey(month, 1); render(); return; }
   if (action === 'settle') {
